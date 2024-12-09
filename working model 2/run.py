@@ -1,7 +1,7 @@
 from model import LoadBalancerModel
 from visualization import NetworkVisualizer
 import pygame
-import random
+
 
 class Button:
     def __init__(self, x, y, width, height, text, color):
@@ -30,21 +30,20 @@ class Button:
 
 
 def run_simulation():
-    def create_new_model(visualizer):
+    def create_new_model():
         return LoadBalancerModel(
-            visualizer=visualizer,
-            min_users=2,
-            max_users=15,
-            initial_users=12,
-            initial_servers=3,
-            max_server_capacity=4,
-            user_spawn_chance = 0.5
+            min_users=10,
+            max_users=30,
+            initial_users=20,
+            initial_servers=4,
+            max_server_capacity=10,
+            user_spawn_chance = 0.9
         )
+
+    model = create_new_model()
 
     # Create visualizer
     vis = NetworkVisualizer()
-    model = create_new_model(vis)
-
 
     button_height = 40
     button_width = 100
@@ -60,38 +59,18 @@ def run_simulation():
                          button_width, button_height, "Step", (150, 0, 150))
     restart_button = Button(step_button.rect.right + spacing, y_position,
                             button_width, button_height, "Restart", (100, 0, 0))
-    # Add butterfly effect button
-    butterfly_button = Button(
-    restart_button.rect.right + spacing, 
-    y_position,
-    button_width, 
-    button_height,
-    "Butterfly", 
-    (128, 0, 128)  # Purple
-    )
-    # Add history button
-    # history_button = Button(
-    #     restart_button.rect.right + spacing, 
-    #     y_position,
-    #     button_width, 
-    #     button_height,
-    #     "History", 
-    #     (0, 100, 150)  # Blue color
-    # )
 
     print(f"Button positions: Start={start_button.rect}, Pause={
           pause_button.rect}, restart={restart_button.rect}")
 
     paused = True
     running = True
-    show_history = False
     clock = pygame.time.Clock()
 
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-                vis.history_window.close()
 
             # Handle button clicks
             if start_button.handle_event(event):
@@ -103,24 +82,8 @@ def run_simulation():
             elif step_button.handle_event(event) and paused:  # Only step when paused
                 model.step()  # Execute single step
             elif restart_button.handle_event(event):
-                model = create_new_model(vis)  # Create fresh model
+                model = create_new_model()  # Create fresh model
                 paused = True  # Pause on restart
-            elif butterfly_button.handle_event(event):
-                if model.server_agents:
-                    # Trigger effect on random server
-                    server = random.choice(model.server_agents)
-                    server.trigger_butterfly_effect()
-            # elif history_button.handle_event(event):
-            #     print("History button clicked")  # Debug
-            #     if vis.previous_frame:
-            #         print("Previous frame exists")  # Debug
-            #         show_history = not show_history
-            #         if show_history:
-            #             vis.history_window.show(vis.previous_frame)
-            #         else:
-            #             vis.history_window.close()
-            #     else:
-            #         print("No previous frame")
 
         # Execute model step if not paused
         if not paused:
@@ -134,20 +97,16 @@ def run_simulation():
         pygame.draw.rect(vis.screen, (50, 50, 50), step_button.rect, 3)
         pygame.draw.rect(vis.screen, (50, 50, 50), pause_button.rect, 3)
         pygame.draw.rect(vis.screen, (50, 50, 50), restart_button.rect, 3)
-        pygame.draw.rect(vis.screen, (50, 50, 50), butterfly_button.rect, 3)
-        # pygame.draw.rect(vis.screen, (50, 50, 50), history_button.rect, 3)
+
         # Draw buttons
         start_button.draw(vis.screen, vis.font)
         step_button.draw(vis.screen, vis.font)
         pause_button.draw(vis.screen, vis.font)
         restart_button.draw(vis.screen, vis.font)
-        butterfly_button.draw(vis.screen, vis.font)
-        # history_button.draw(vis.screen, vis.font)
-        
+
         pygame.display.flip()
         clock.tick(2)  # 2 FPS for clear visualization
 
-    vis.history_window.close()
     vis.close()
 
 

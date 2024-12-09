@@ -27,10 +27,7 @@ class UserAgent(Agent):
     def request_connection(self):
         """Request connection to a server."""
         target_server = random.choice(self.model.server_agents)
-        # NEW COdes
-        msg = f"COMM: User {self.myid} requesting connection to Server {target_server.unique_id}"
-        self.model.visualizer.add_log_message(msg)
-        # End 
+        print(f"Debug: User {self.myid} server {target_server.unique_id}")
         self.connection_requested = True
         target_server.receive_request(self)
         self.state = "requested"
@@ -119,25 +116,6 @@ class ServerAgent(Agent):
         self.connected_users = []
         self.upper_threshold = int(self.max_capacity * 0.6)
 
-    def trigger_butterfly_effect(self):
-        """Small change that causes cascading effects."""
-        # Small trigger - disconnect one random user
-        if self.connected_users:
-            user = random.choice(list(self.connected_users))
-            self.connected_users.remove(user)
-            user.handle_disconnection()
-            
-            msg = f"BUTTERFLY: Small change - User {user.myid} disconnected from Server {self.unique_id}"
-            self.model.visualizer.add_log_message(msg)
-            
-            # This may cause:
-            # 1. Server becomes underutilized -> requests users
-            # 2. Other servers transfer users -> they become underutilized
-            # 3. Chain of load balancing begins
-            # 4. Possible server terminations
-            # 5. User redistribution across network
-
-
     def check_utilization(self):
         """Check if server is underutilized."""
         current_users = len(self.connected_users)
@@ -148,11 +126,6 @@ class ServerAgent(Agent):
 
     def request_users_from_others(self, users_needed):
         """Request users from other servers to improve utilization."""
-        # New codes
-        msg = f"COLLAB: Server {self.unique_id} requesting {users_needed} users"
-        self.model.visualizer.add_log_message(msg)
-        # End
-        
         other_servers = [s for s in self.model.server_agents
                          if s != self and s.active]
 
@@ -179,11 +152,6 @@ class ServerAgent(Agent):
 
     def transfer_user(self, user, from_server):
         """Transfer a user from another server to this one."""
-        # New codes
-        msg = f"TRANSFER: User {user.myid} from S{from_server.unique_id} to S{self.unique_id}"
-        self.model.visualizer.add_log_message(msg)
-        # end
-
         # Remove from old server
         from_server.connected_users.remove(user)
         from_server.current_load -= 1
@@ -215,11 +183,6 @@ class ServerAgent(Agent):
 
     def distribute_users_and_terminate(self):
         """Distribute users evenly and terminate self."""
-        # New codes
-        msg = f"NEGO: Server {self.unique_id} negotiating shutdown"
-        self.model.visualizer.add_log_message(msg)
-        # end
-
         other_servers = [s for s in self.model.server_agents
                          if s != self and s.active]
 
@@ -310,7 +273,6 @@ class LoadBalancerModel(Model):
 
     def __init__(
         self,
-        visualizer,
         initial_users=20,
         initial_servers=4,
         max_server_capacity=10,
@@ -324,7 +286,6 @@ class LoadBalancerModel(Model):
         self.server_failure_chance = server_failure_chance
         self.server_up_chance = server_up_chance
         self.max_server_capacity = max_server_capacity
-        self.visualizer = visualizer
 
         class LoadBalancerScheduler(BaseScheduler):
             """Custom scheduler that activates agents in a specific order:
